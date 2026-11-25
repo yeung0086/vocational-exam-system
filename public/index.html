@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-title-suffix="">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#079e61" />
+<title>职业技能考试系统</title>
+<!-- 微信/QQ 分享卡片：OG 标签必须静态写死，抓取器不执行 JS；og:image 内嵌 sharecode 过门禁 -->
+<meta property="og:type" content="website" />
+<meta property="og:title" content="职业技能考试系统 · 点击进入" />
+<meta property="og:description" content="职业技能考试系统，限时45分钟，点击进入答题。" />
+<meta property="og:image" content="https://your-domain.example.com/share-card.png" />
+<meta property="og:image:secure_url" content="https://your-domain.example.com/share-card.png" />
+<meta property="og:image:type" content="image/png" />
+<meta property="og:image:width" content="478" />
+<meta property="og:image:height" content="478" />
+<meta property="og:url" content="https://your-domain.example.com/" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="职业技能考试系统 · 点击进入" />
+<meta name="twitter:description" content="职业技能考试系统，限时45分钟，点击进入答题。" />
+<meta name="twitter:image" content="https://your-domain.example.com/share-card.png" />
+<link rel="stylesheet" href="/student.css?v=6" />
+<script src="/offline.js?v=4"></script>
+</head>
+<body>
+<div id="wxTip" style="display:none;position:fixed;top:0;left:0;right:0;z-index:999;background:#1f2329;color:#fff;font-size:13px;text-align:center;padding:9px 12px;line-height:1.4;">微信内若页面打不开，请点右上角 <b>···</b> → 选择「在浏览器中打开」</div>
+<canvas id="confetti"></canvas>
+<div class="fb" id="fb"></div>
+<div class="app">
+  <div class="topbar">
+    <div class="cls"><span data-cfg="subtitle">培训考试系统</span><button class="mutebtn" id="muteBtn" title="音效开关">🔊</button></div>
+    <h1 data-cfg="title">职业技能考试系统</h1>
+    <div class="tip">v3.1.1 · 限时45分钟 · 单选/多选/判断 · 点选后显示答案即锁定</div>
+    <div class="timerwrap" id="timerWrap" style="display:none;">
+      <div class="timerbar"><i id="timerFill"></i></div>
+      <div class="timertxt" id="timerTxt"><span>⏱ 剩余时间</span><span id="timerNum">--:--:--</span></div>
+    </div>
+  </div>
+
+  <div class="stage" id="gateStage">
+    <div class="card gate-card">
+      <div class="gate-icon">🔐</div>
+      <div class="gate-title">进入考试</div>
+      <div class="hint">请输入进入密码</div>
+      <input type="password" id="gatePwd" placeholder="进入密码" style="text-align:center;" />
+      <div class="remain" id="gateErr" style="color:#fa5151;min-height:20px;margin-top:8px;"></div>
+      <button class="btn" id="gateBtn">进入</button>
+    </div>
+  </div>
+
+  <div class="stage" id="startStage" style="display:none;">
+    <div class="card">
+      <div class="label">学员姓名 <span class="req">* 必填</span></div>
+      <select id="nameSelect"><option value="" disabled selected>请选择您的姓名</option></select>
+      <div class="hint">本班共 <span id="clsCount">--</span> 名学员，请如实选择。开始后将实时上报答题状态。</div>
+      <div class="remain" id="remainTxt"></div>
+    </div>
+    <button class="btn" id="startBtn" disabled>开始考试</button>
+    <div class="foot">共 <span id="qcount">--</span> 题 · 单选 + 多选 + 判断 · 闯关学习模式</div>
+    <div class="link"><a href="/share.html">👉 不会进？点此扫码进入</a></div>
+  </div>
+
+  <div class="stage" id="quizStage" style="display:none;">
+    <div class="quiz-layout">
+      <aside class="quiz-side">
+        <div class="card">
+          <div class="topstats">
+            <div class="stat"><div class="v" id="stProg">1/100</div><div class="l">进度</div></div>
+            <div class="stat"><div class="v streak" id="stStreak">0</div><div class="l">🔥 连对</div></div>
+            <div class="stat"><div class="v timer" id="stTime">00:00</div><div class="l">用时</div></div>
+          </div>
+          <div class="progress"><i id="progBar"></i></div>
+          <div class="qgrid" id="qGrid"></div>
+          <div class="side-legend"><span><i style="background:var(--green)"></i>已答</span><span><i style="background:var(--green-l);border:1px solid var(--line)"></i>未答</span><span>点已答题号可回看</span></div>
+        </div>
+      </aside>
+      <section class="quiz-main">
+        <div class="card">
+          <div class="qmeta"><span>第 <b id="curNo">1</b> / <span id="totNo">100</span> 题</span><span id="ansState">未作答</span></div>
+          <div class="qtext" id="qText"></div>
+          <div id="optBox"></div>
+          <div class="quiz-actions">
+            <button class="btn" id="revealBtn" disabled>显示答案</button>
+            <button class="btn ghost" id="nextBtn" style="display:none;">下一题</button>
+          </div>
+          <div class="exp" id="expBox"><span class="et">解析</span><span id="expText"></span></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div class="stage" id="resultStage" style="display:none;">
+    <div class="card" style="text-align:center;">
+      <div class="score-ring" id="ring"><div class="inner"><div class="num" id="rScore">0</div><div class="den" id="rDen">/100</div></div></div>
+      <div class="rname" id="rName"></div>
+      <div class="rmsg" id="rMsg"></div>
+      <div class="badges" id="rBadges"></div>
+      <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+        <button class="btn ghost" id="printBtn">打印 / 保存成绩单</button>
+        <button class="btn ghost" id="retryBtn">返回</button>
+      </div>
+      <div class="link"><a href="/admin" target="_blank">管理员展板（仅管理员）</a></div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===== 云平台网关适配 =====
+ * 公网网关要求每个 API 请求带 sharecode，且会吞掉保留参数 token。
+ * 统一包装 fetch：自动附加 sharecode，并用自定义头 X-Exam-Token 传令牌。
+ */
+(function(){
+  var m = location.search.match(/[?&]sharecode=([^&#]+)/);
+  var sc = m ? decodeURIComponent(m[1]) : '';
+  var rawFetch = window.fetch.bind(window);
+  window.fetch = function(input, init){
+    var url = typeof input === 'string' ? input : (input && input.url) || String(input);
+    if(url.indexOf('/api/') === 0){
+      url += (url.indexOf('?') >= 0 ? '&' : '?') + 'sharecode=' + encodeURIComponent(sc);
+      var tk = sessionStorage.getItem('stuToken') || '';
+      if(tk){
+        init = init || {};
+        var h = {};
+        if(init.headers){ if(init.headers.forEach) init.headers.forEach(function(v,k){h[k]=v;}); else Object.keys(init.headers).forEach(function(k){h[k]=init.headers[k];}); }
+        h['X-Exam-Token'] = tk;
+        init = Object.assign({}, init, {headers:h});
+      }
+    }
+    return rawFetch(url, init);
+  };
+})();
+/* ===== v3.0 学员端 =====
+ * 题库脱敏：QUESTIONS 不含 a / e；对错与解析由 POST /api/reveal 逐题下发。
+ * 交卷分数以 /api/submit 服务端返回值为准，前端累计值只用于过程展示。
+ * 断网时请求进 outbox，恢复后按序重放，eventId 保证幂等。
+ */
+let QUESTIONS = [], NAMES = [];
+let stuToken = sessionStorage.getItem('stuToken') || '';
+const $=id=>document.getElementById(id);
+let cur=0, selected=-1, locked=false, correctCount=0, studentName='', startTime=0, streak=0, maxStreak=0, attemptNo=1, maxAttempts=2, timeLimit=2700, curStatus='idle';
+const userCorrect=[], picks=[], qTimes=[];
+let resumeExplanations=[];   // 续答回补：已答题解析（离线重放后由 /api/resume 补齐）
+let qT0=0, timerInt=null, timeLeft=0, timerEndAt=0, timeTickInt=null, muted=false, audioCtx=null;
+let submitting=false;   // 交卷防重复点击/重复提交
+const uid=()=>window.ExamOffline ? ExamOffline.uid() : (Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,9));
+
+function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),1800); }
+function fmtTime(s){ s=Math.max(0,Math.round(s)); const h=Math.floor(s/3600), m=Math.floor((s%3600)/60), ss=s%60; const p=n=>(''+n).padStart(2,'0'); return (h>0?h+':':'')+p(m)+':'+p(ss); }
+function post(url,body){ return fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body||{})}); }
+
+// ===== 音效（WebAudio，可静音）=====
+function ensureAudio(){ if(!audioCtx){ try{ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ audioCtx=null; } } if(audioCtx&&audioCtx.state==='suspended') audioCtx.resume(); }
+function beep(freq,dur,type,vol){ if(muted||!audioCtx) return; const o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.type=type||'sine'; o.frequency.value=freq; g.gain.value=vol||0.06; o.connect(g); g.connect(audioCtx.destination); const t=audioCtx.currentTime; o.start(t); g.gain.exponentialRampToValueAtTime(0.0001,t+(dur||0.15)); o.stop(t+(dur||0.15)); }
+function sndTick(){ beep(520,0.06,'square',0.04); }
+function sndCorrect(){ beep(660,0.12,'sine',0.07); setTimeout(()=>beep(990,0.16,'sine',0.07),110); }
+function sndWrong(){ beep(180,0.28,'sawtooth',0.06); }
+$('muteBtn').onclick=()=>{ muted=!muted; $('muteBtn').textContent=muted?'🔇':'🔊'; if(!muted){ ensureAudio(); sndTick(); } };
+
+// ===== 倒计时语音播报（Web Speech，中文）=====
+// 最后 5 分钟在 5/3/2/1 分钟节点各播报一次；每场只播一次，续答不重复。
+let voiceMarks=[300,180,120,60], voiceDone={}, voiceReady=false;
+function pickZhVoice(){
+  if(!('speechSynthesis' in window)) return null;
+  const vs=window.speechSynthesis.getVoices()||[];
+  return vs.find(v=>/^zh(-|_)?CN/i.test(v.lang)) || vs.find(v=>/^zh/i.test(v.lang)) || null;
+}
+if('speechSynthesis' in window){
+  try{ window.speechSynthesis.getVoices(); voiceReady=true; }catch(e){}
+  window.speechSynthesis.onvoiceschanged=()=>{ voiceReady=true; pickZhVoice(); };
+}
+function speak(text){
+  if(muted) return;
+  if(!('speechSynthesis' in window)) return;
+  try{
+    window.speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text);
+    const v=pickZhVoice(); if(v) u.voice=v;
+    u.lang='zh-CN'; u.rate=0.95; u.pitch=1; u.volume=1;
+    window.speechSynthesis.speak(u);
+  }catch(e){}
+}
+function checkVoice(){
+  // timeLeft 为剩余秒数：跨过 300/180/120/60 时各播报一次
+  for(const m of voiceMarks){
+    if(!voiceDone[m] && timeLeft>0 && timeLeft<=m){
+      // 只在临近节点（差值 <25 秒）时播，避免从大数直接跳入时误报
+      if(m-timeLeft < 25){ voiceDone[m]=true; speak('考试倒计时'+(m/60)+'分钟'); }
+      else voiceDone[m]=true;
+    }
+  }
+}
+
+// ===== 数据加载：名单公开，题库必须带学员令牌 =====
+function loadNames(){
+  return fetch('/api/names').then(r=>r.json()).then(d=>{
+    NAMES=d.names||[];
+    const sel=$('nameSelect'); sel.innerHTML='<option value="" disabled selected>请选择您的姓名</option>';
+    NAMES.forEach(n=>{ const o=document.createElement('option'); o.value=n; o.textContent=n; sel.appendChild(o); });
+    $('clsCount').textContent=NAMES.length;
+  });
+}
+function loadQuestions(){
+  if(!stuToken) return Promise.reject(new Error('unauthorized'));
+  return fetch('/api/questions?token='+encodeURIComponent(stuToken)).then(async r=>{
+    if(r.status===401||r.status===403) throw new Error('unauthorized');
+    if(!r.ok) throw new Error('http');
+    const d=await r.json();
+    QUESTIONS=d.questions||[];
+    if(!QUESTIONS.length) throw new Error('empty');
+    $('qcount').textContent=QUESTIONS.length; $('totNo').textContent=QUESTIONS.length;
+    $('stProg').textContent='1/'+QUESTIONS.length;
+    return d;
+  });
+}
+async function ensureQuestions(){
+  try{ if(!QUESTIONS.length) await loadQuestions(); return true; }
+  catch(e){
+    if(String(e.message).indexOf('unauthorized')>=0){
+      stuToken=''; sessionStorage.removeItem('stuToken'); showGate();
+      $('gateErr').textContent='登录已失效，请重新输入进入密码';
+    } else toast('题库加载失败，请检查网络后重试');
+    return false;
+  }
+}
+loadNames().catch(()=>{ toast('名单加载失败，请刷新重试'); });
+
+// ===== 学员端密码门禁 =====
+function showGate(){ $('timerWrap').style.display='none'; $('gateStage').style.display='block'; $('startStage').style.display='none'; $('quizStage').style.display='none'; $('resultStage').style.display='none'; }
+function showStart(){ $('timerWrap').style.display='none'; $('gateStage').style.display='none'; $('startStage').style.display='block'; }
+$('gateBtn').onclick = async () => {
+  const v = $('gatePwd').value.trim();
+  if(!v){ $('gateErr').textContent='请输入进入密码'; return; }
+  $('gateBtn').disabled=true;
+  try{
+    const r = await post('/api/student/login',{password:v});
+    const d = await r.json();
+    if(d.ok){
+      stuToken=d.token; sessionStorage.setItem('stuToken',stuToken);
+      $('gatePwd').value=''; $('gateErr').textContent='';
+      const ok=await ensureQuestions();
+      if(ok) showStart();
+    } else {
+      stuToken=''; sessionStorage.removeItem('stuToken');
+      if(d.closed){ $('gateErr').style.color='#ffb347'; $('gateErr').textContent = d.msg || '学员端暂未开放'; return; }
+      $('gateErr').style.color='#fa5151'; $('gateErr').textContent = d.msg || '密码错误';
+    }
+  }catch(e){ $('gateErr').textContent='网络异常，请重试'; }
+  finally{ setTimeout(()=>{ $('gateBtn').disabled=false; },200); }
+};
+$('gatePwd').addEventListener('keydown', e => { if(e.key==='Enter') $('gateBtn').click(); });
+$('gatePwd').addEventListener('input', () => { $('gateBtn').disabled = false; });
+// 初始化：已有 token 先校验令牌并加载脱敏题库，失效则回门禁
+if (stuToken) { (async()=>{ const ok=await ensureQuestions(); if(ok) showStart(); })(); } else { showGate(); }
+
+$('nameSelect').onchange=()=>{ checkRemaining(); };
+async function checkRemaining(){
+  const v=$('nameSelect').value;
+  if(!v){ $('startBtn').disabled=true; $('remainTxt').textContent=''; return; }
+  try{
+    const r=await fetch('/api/student-status?name='+encodeURIComponent(v)); const d=await r.json();
+    if(d.found){ curStatus=d.status||'idle'; maxAttempts=d.max||2; timeLimit=d.timeLimit||2700;
+      if(d.status==='done'){ $('remainTxt').textContent='您已完成考试，如需重考请联系管理员授权。'; $('startBtn').disabled=true; }
+      else if(d.status==='doing'){ $('remainTxt').textContent='检测到进行中的考试，将从原进度继续。'; $('startBtn').disabled=false; }
+      else { const left=Math.max(0,(d.max||2)-(d.attempts||0));
+        if(left<=0){ $('remainTxt').textContent='已达到最大答题次数，无法再次开始。'; $('startBtn').disabled=true; }
+        else { $('remainTxt').textContent='您还可答题 '+left+' 次（共 '+d.max+' 次）。点击开始将续答或新开。'; $('startBtn').disabled=false; } }
+    } else { curStatus='idle'; $('remainTxt').textContent=''; $('startBtn').disabled=false; }
+  }catch(e){ curStatus='idle'; $('startBtn').disabled=false; }
+}
+
+$('startBtn').onclick=async()=>{
+  const v=$('nameSelect').value;
+  if(!v){ toast('请先选择学员姓名（必填）'); return; }
+  if(!QUESTIONS.length){ const ok=await ensureQuestions(); if(!ok) return; }
+  let st='idle';
+  try{ const r=await fetch('/api/student-status?name='+encodeURIComponent(v)); const d=await r.json(); if(d.found) st=d.status; }catch(e){}
+  if(st==='done'){ toast('已完成考试，需管理员授权重考'); return; }
+  studentName=v; ensureAudio();
+  if(st==='doing'){
+    let rj;
+    try{ const r=await fetch('/api/resume?name='+encodeURIComponent(v)+'&token='+encodeURIComponent(stuToken)); rj=await r.json(); }catch(e){ rj=null; }
+    if(rj&&rj.ok){ enterResume(rj); return; }
+    toast(rj&&rj.msg ? (rj.msg+'，请重新开始') : '续答失败，请重新开始');
+  }
+  let sj;
+  try{ const r=await post('/api/start',{name:v,total:QUESTIONS.length,token:stuToken,eventId:uid()}); sj=await r.json(); }
+  catch(e){ toast('网络异常，请重试'); return; }
+  if(!sj.ok){ toast(sj.msg||'无法开始'); if(sj.msg&&/次数/.test(sj.msg)){ checkRemaining(); } if(sj.msg&&/密码|未解锁/.test(sj.msg)){ stuToken=''; sessionStorage.removeItem('stuToken'); showGate(); } return; }
+  attemptNo=sj.attemptNo||1; maxAttempts=sj.max||2; startTime=Date.now(); streak=0; maxStreak=0;
+  cur=0; correctCount=0; userCorrect.length=0; picks.length=0; qTimes.length=0; resumeExplanations=[];
+  $('startStage').style.display='none'; $('resultStage').style.display='none'; $('quizStage').style.display='block';
+  $('timerWrap').style.display='block';
+  startTimerRemaining(sj.remainingSec!=null? sj.remainingSec : 0); render();
+};
+
+// 续答：服务端返回已判题目的对错（不含任何未作答题的答案）
+function enterResume(r){
+  userCorrect.length=0; picks.length=0; qTimes.length=0;
+  (r.picks||[]).forEach((p,i)=>{ if(p!=null) picks[i]=p; });
+  (r.qTimes||[]).forEach((t,i)=>{ if(t!=null) qTimes[i]=t; });
+  (r.feedback||[]).forEach((f,i)=>{ if(f) userCorrect[i]=!!f.correct; });
+  resumeExplanations=Array.isArray(r.explanations)? r.explanations.slice() : [];
+  correctCount=r.correctCount||0;
+  streak=0; maxStreak=0; (r.feedback||[]).forEach(f=>{ if(f&&f.correct){streak++;maxStreak=Math.max(maxStreak,streak);} else streak=0; });
+  cur=(r.current||0); if(cur>=QUESTIONS.length) cur=QUESTIONS.length-1;
+  attemptNo=r.attemptNo||1; maxAttempts=r.max||2;
+  const savedDur=r.durationSec||0;
+  startTime=Date.now()-savedDur*1000;
+  $('startStage').style.display='none'; $('resultStage').style.display='none'; $('quizStage').style.display='block';
+  $('timerWrap').style.display='block';
+  startTimerRemaining(r.remainingSec!=null? r.remainingSec : savedDur); render();
+  toast('已从原进度继续（第 '+(cur+1)+' 题）');
+}
+
+// 实时保存作答进度（失败进 outbox）
+async function saveProgress(answered, current){
+  if(!studentName) return;
+  const durationSec=Math.round((Date.now()-startTime)/1000);
+  const body={name:studentName,answered,total:QUESTIONS.length,current,
+              picks:picks.slice(),qTimes:qTimes.slice(),durationSec,token:stuToken,eventId:uid()};
+  try{
+    const r=await post('/api/progress',body);
+    if(!r.ok) throw new Error('http');
+  }catch(e){
+    if(window.ExamOffline) await ExamOffline.queue({url:'/api/progress',body});
+  }
+}
+
+function startTimer(offsetSec){
+  startTimerRemaining(timeLimit-(offsetSec||0));
+}
+// 以服务端剩余秒数为准对齐倒计时（避免本地时钟漂移/改表）
+function startTimerRemaining(rem){
+  stopTimer(); voiceDone={};
+  timeLeft=Math.max(0, rem!=null? rem : timeLimit);
+  timerEndAt=Date.now()+timeLeft*1000;
+  updateTimerUI();
+  timeTickInt=setInterval(()=>{
+    timeLeft=Math.max(0, Math.ceil((timerEndAt-Date.now())/1000));
+    updateTimerUI();
+    checkVoice();
+    if(timeLeft<=0){ stopTimer(); if('speechSynthesis' in window){ try{window.speechSynthesis.cancel();}catch(e){} } autoFinish(); }
+  },1000);
+}
+function updateTimerUI(){
+  $('timerNum').textContent=fmtTime(timeLeft);
+  $('stTime').textContent=fmtTime(Math.max(0,Math.round((Date.now()-startTime)/1000)));
+  const pct=timeLimit?Math.max(0,timeLeft/timeLimit*100):0; $('timerFill').style.width=pct+'%';
+  // 最后 10 分钟（<=600s）红色字体告警
+  const warn = timeLeft<=600;
+  $('timerTxt').classList.toggle('warn',warn);
+  $('timerFill').style.background = warn ? '#ff3b30' : '#fff';
+}
+function stopTimer(){ if(timeTickInt){ clearInterval(timeTickInt); timeTickInt=null; } }
+
+// ===== 逐题判分：服务端下发对错、正确选项与解析 =====
+$('revealBtn').onclick=async()=>{
+  if(locked) return;
+  if(selected==null || (Array.isArray(selected)&&selected.length===0) || selected===-1){ toast('请先选择答案'); return; }
+  locked=true;
+  const q=QUESTIONS[cur];
+  const chosen=Array.isArray(selected)?selected.slice():selected;
+  const dur=Math.round((Date.now()-(qT0||Date.now()))/1000);
+  picks[cur]=chosen; qTimes[cur]=dur;
+  const body={name:studentName,qid:q.qid,pick:chosen,durationSec:dur,token:stuToken,eventId:uid()};
+  let fb=null;
+  try{
+    const r=await post('/api/reveal',body);
+    fb=await r.json();
+    if(!fb||!fb.ok) throw new Error(fb&&fb.msg||'判定失败');
+  }catch(e){
+    if(window.ExamOffline) await ExamOffline.queue({url:'/api/reveal',body});
+    $('expText').textContent='网络异常：本题作答已保存，恢复网络后由服务端统一判分，成绩不受影响。';
+    $('expBox').classList.add('show');
+    $('ansState').textContent='已保存（离线）'; $('ansState').style.color='var(--sub)';
+    $('revealBtn').style.display='none'; $('nextBtn').style.display='block';
+    if(cur===QUESTIONS.length-1) $('nextBtn').textContent='提交并查看成绩';
+    saveProgress(userCorrect.filter(x=>x!==undefined).length+1, cur+1);
+    return;
+  }
+  applyReveal(fb, chosen);
+};
+
+function applyReveal(fb, chosen){
+  userCorrect[cur]=!!fb.correct;
+  if(fb.correct){ correctCount++; streak++; maxStreak=Math.max(maxStreak,streak); sndCorrect(); }
+  else { streak=0; sndWrong(); }
+  $('stStreak').textContent=streak;
+  if(streak>0 && streak%5===0) bigBurst('🎊');
+  const opts=$('optBox').children;
+  const correctSet=Array.isArray(fb.correctIndexes)?fb.correctIndexes:[];
+  const selectedSet=Array.isArray(chosen)?chosen:[chosen];
+  for(let i=0;i<opts.length;i++){ opts[i].classList.add('locked'); if(correctSet.includes(i)) opts[i].classList.add('correct'); else if(selectedSet.includes(i)) opts[i].classList.add('wrong'); }
+  $('expText').textContent=fb.explanation||''; $('expBox').classList.add('show');
+  $('revealBtn').style.display='none';
+  $('ansState').textContent=fb.correct?'✓ 回答正确':'✗ 回答错误';
+  $('ansState').style.color=fb.correct?'var(--ok)':'var(--err)';
+  showFeedback(!!fb.correct);
+  $('nextBtn').style.display='block';
+  if(cur===QUESTIONS.length-1) $('nextBtn').textContent='提交并查看成绩';
+  saveProgress(fb.answered!=null?fb.answered:userCorrect.filter(x=>x!==undefined).length, cur+1);
+}
+
+function showFeedback(ok){
+  const fb=$('fb'); fb.textContent = ok ? '🎉' : '💡';
+  fb.classList.remove('show'); void fb.offsetWidth; fb.classList.add('show');
+  if(!ok){ const card=document.querySelector('#quizStage .card'); card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake'); }
+}
+function bigBurst(e){ const fb=$('fb'); fb.textContent=e; fb.classList.remove('show'); void fb.offsetWidth; fb.classList.add('show'); }
+
+$('nextBtn').onclick=()=>{ if(cur<QUESTIONS.length-1){ cur++; render(); } else finish(false); };
+$('retryBtn').onclick=async()=>{
+  $('timerWrap').style.display='none';
+  $('resultStage').style.display='none'; $('startStage').style.display='block';
+  await checkRemaining();
+};
+$('printBtn').onclick=()=>window.print();
+
+function render(){
+  const q=QUESTIONS[cur];
+  const isMultiQ = q.type==='multi';
+  locked=false; selected = isMultiQ ? [] : -1; qT0=Date.now();
+  $('curNo').textContent=cur+1; $('stProg').textContent=(cur+1)+'/'+QUESTIONS.length;
+  $('progBar').style.width=(cur/QUESTIONS.length*100)+'%';
+  const tag = q.type==='bool'?'<span class="qtag">判断题</span>' : isMultiQ?'<span class="qtag">多选题</span>':'<span class="qtag">单选题</span>';
+  const card=document.querySelector('#quizStage .card'); card.style.animation='none'; void card.offsetWidth; card.style.animation='';
+  $('qText').innerHTML=q.q+tag;
+  $('ansState').textContent='未作答'; $('ansState').style.color='var(--sub)';
+  $('expBox').classList.remove('show');
+  $('revealBtn').style.display='block'; $('revealBtn').disabled=true; $('nextBtn').style.display='none';
+  $('nextBtn').textContent='下一题';
+  const box=$('optBox'); box.innerHTML='';
+  const opts = q.type==='bool' ? ['对','错'] : (q.o||[]);
+  opts.forEach((text,i)=>{
+    const b=document.createElement('button'); b.className='opt'+(isMultiQ?' multi':'');
+    const mark = q.type==='bool' ? (i===0?'✓':'✕') : String.fromCharCode(65+i);
+    b.innerHTML='<span class="dot">'+mark+'</span><span>'+text+'</span>';
+    b.onclick=(ev)=>{
+      if(locked) return;
+      sndTick();
+      if(isMultiQ){
+        const pos=selected.indexOf(i);
+        if(pos>=0) selected.splice(pos,1); else selected.push(i);
+        b.classList.toggle('sel', selected.includes(i));
+        $('ansState').textContent = selected.length ? ('已选 '+selected.length+' 项') : '未作答';
+      } else {
+        selected=i; [...box.children].forEach(c=>c.classList.remove('sel')); b.classList.add('sel');
+      }
+      const r=document.createElement('span'); r.className='ripple'; const rect=b.getBoundingClientRect(); const sz=Math.max(rect.width,rect.height); r.style.width=r.style.height=sz+'px'; r.style.left=(ev.clientX-rect.left-sz/2)+'px'; r.style.top=(ev.clientY-rect.top-sz/2)+'px'; b.appendChild(r); setTimeout(()=>r.remove(),600);
+      $('revealBtn').disabled = isMultiQ ? selected.length===0 : selected<0;
+    };
+    box.appendChild(b);
+  });
+  // 续答 / 离线重放回补：已作答题目回填服务端解析（不含未答题答案）
+  if(picks[cur]!=null && resumeExplanations[cur]){
+    $('expText').textContent=resumeExplanations[cur]; $('expBox').classList.add('show');
+  }
+  renderGrid();
+  window.scrollTo(0,0);
+}
+
+// 题号网格：已答 / 当前 / 未到达三色；仅可跳回到达过的题
+function renderGrid(){
+  const box=$('qGrid'); if(!box || !QUESTIONS.length) return;
+  box.innerHTML='';
+  const answeredCount=picks.filter(x=>x!=null).length;
+  const reached=Math.max(cur, answeredCount);
+  QUESTIONS.forEach((_, i)=>{
+    const b=document.createElement('button');
+    b.type='button';
+    b.className='qn';
+    if(picks[i]!=null) b.classList.add('answered');
+    if(i===cur) b.classList.add('current');
+    const locked=i>reached;
+    if(locked) b.classList.add('locked'); else b.classList.add('jump');
+    b.textContent=i+1;
+    b.onclick=()=>{ if(i<=reached && i!==cur){ cur=i; render(); } };
+    box.appendChild(b);
+  });
+}
+
+// ===== 交卷：以服务端返回分数为唯一准 =====
+async function finish(auto){
+  if(submitting) return;   // 防重复点击 / 重复提交
+  submitting=true;
+  stopTimer();
+  $('timerWrap').style.display='none';
+  $('quizStage').style.display='none'; $('resultStage').style.display='block';
+  $('rScore').textContent='…'; $('rDen').textContent='/'+QUESTIONS.length;
+  $('rName').textContent='学员：'+studentName+'　第 '+attemptNo+' / '+maxAttempts+' 次';
+  $('rMsg').textContent='正在提交，由服务端统一判分…'; $('rBadges').innerHTML='';
+  window.scrollTo(0,0);
+  const total=QUESTIONS.length;
+  const durationSec=Math.round((Date.now()-startTime)/1000);
+  const body={name:studentName,total,durationSec,picks:picks.slice(),qTimes:qTimes.slice(),token:stuToken,eventId:uid()};
+  let d=null;
+  for(let i=0;i<3;i++){
+    try{ const r=await post('/api/submit',body); d=await r.json(); if(d&&d.ok) break; }catch(e){ d=null; }
+    await new Promise(r=>setTimeout(r,700));
+  }
+  if(!d||!d.ok){
+    submitting=false;
+    if(window.ExamOffline) await ExamOffline.queue({url:'/api/submit',body});
+    $('rScore').textContent='--';
+    $('rMsg').textContent='网络异常：答卷已本地缓存，联网后会自动提交，请保持本页或联系老师。';
+    return;
+  }
+  renderResult(d, auto, durationSec);
+}
+function renderResult(d, auto, durationSec){
+  const total=d.total, correct=d.score, pct=d.pct;
+  $('rScore').textContent=correct; $('rDen').textContent='/'+total;
+  $('ring').style.setProperty('--p',pct+'%');
+  let msg,badges=[];
+  if(pct>=100){msg='满分！知识掌握非常扎实。';badges.push(['🏆 满分王者',false]);}
+  else if(pct>=90){msg='优秀！个别细节再巩固。';badges.push(['💎 优秀学员',false]);}
+  else if(pct>=75){msg='良好，建议复习错题解析。';badges.push(['⭐ 良好',false]);}
+  else if(pct>=60){msg='合格，请结合课件复习。';badges.push(['✅ 合格',false]);}
+  else{msg='需加强，请结合课件系统复习。';badges.push(['🌱 继续加油',false]);}
+  if(maxStreak>=10) badges.push(['🔥 连对 '+maxStreak+' 题',true]);
+  if(durationSec>0 && durationSec<=total*4) badges.push(['🚀 神速作答',true]);
+  else if(durationSec>0 && durationSec<=total*6) badges.push(['⏱ 稳健作答',true]);
+  $('rMsg').textContent=(auto?'⏰ 时间到，已自动交卷　':'')+'服务端判分 '+correct+' / '+total+'（'+pct+'%）· 用时 '+fmtTime(durationSec)+' · 最高连对 '+maxStreak+(d.passed?' · 合格':'');
+  const bw=$('rBadges'); bw.innerHTML='';
+  badges.forEach(([t,gold])=>{ const s=document.createElement('span'); s.className='badge'+(gold?' gold':''); s.textContent=t; bw.appendChild(s); });
+  if(pct>=60) launchConfetti();
+}
+function autoFinish(){ toast('时间到，自动交卷'); finish(true); }
+
+// 轻量撒花（canvas，无依赖）
+let confettiRAF=null;
+function launchConfetti(){
+  const c=$('confetti'); c.style.display='block'; const ctx=c.getContext('2d'); c.width=window.innerWidth; c.height=window.innerHeight;
+  const colors=['#07C160','#f5a623','#2b7de0','#fa5151','#9b59b6','#1abc9c']; const parts=[];
+  for(let i=0;i<120;i++){ parts.push({x:Math.random()*c.width,y:-20-Math.random()*c.height*0.5,r:3+Math.random()*5,c:colors[i%colors.length],vx:-2+Math.random()*4,vy:2+Math.random()*4,rot:Math.random()*6,vr:-0.2+Math.random()*0.4}); }
+  let frames=0;
+  function tick(){ ctx.clearRect(0,0,c.width,c.height); parts.forEach(p=>{ p.x+=p.vx;p.y+=p.vy;p.rot+=p.vr; ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.rot);ctx.fillStyle=p.c;ctx.fillRect(-p.r,-p.r,p.r*2,p.r*2);ctx.restore(); }); frames++; if(frames<200) confettiRAF=requestAnimationFrame(tick); else { ctx.clearRect(0,0,c.width,c.height); c.style.display='none'; } }
+  cancelAnimationFrame(confettiRAF); tick();
+}
+
+// ===== 离线韧性：SW + outbox 重放 =====
+if('serviceWorker' in navigator && location.protocol.indexOf('http')===0){
+  navigator.serviceWorker.register('/sw.js').catch(()=>{});
+}
+if(window.ExamOffline){
+  ExamOffline.autoFlush(async (item)=>{
+    try{
+      const r=await post(item.url,item.body);
+      const d=await r.json().catch(()=>({ok:false}));
+      return !!(d&&d.ok);
+    }catch(_){ return false; }
+  });
+}
+
+// ===== 监考事件：切屏/复制/剪切/右键，只上报"标记待审"，不弹窗、不自动判罚 =====
+let blurAt=0;
+function reportProctor(event, detail, durationSec){
+  if(!studentName) return;
+  post('/api/proctor',{name:studentName,token:stuToken,event,detail:detail||'',durationSec:durationSec||0,eventId:uid()}).catch(()=>{});
+}
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){ blurAt=Date.now(); return; }
+  if(!blurAt) return;
+  const sec=Math.round((Date.now()-blurAt)/1000); blurAt=0;
+  reportProctor('blur','visibility',sec);
+});
+document.addEventListener('copy',()=>reportProctor('copy'));
+document.addEventListener('cut',()=>reportProctor('cut'));
+document.addEventListener('contextmenu',()=>reportProctor('contextmenu'));
+</script>
+<script>
+/* 场次主题注入：可变文字来自 /api/config；主题优先取大屏应用在同源 localStorage 里选的值，
+   这样在桌面应用「大屏选主题」后，学员端窗口即时跟随（storage 事件），切换零重启、零卡顿。 */
+(function(){
+  var valid=['T1','T2','T3','T4','T5'], KEY='exam_theme';
+  function applyTheme(id){ document.documentElement.dataset.theme = valid.indexOf(id)>=0 ? id : 'T2'; }
+  function localTheme(){ try{ return localStorage.getItem(KEY)||''; }catch(e){ return ''; } }
+  applyTheme(localTheme()||'T2');
+  fetch('/api/config').then(function(r){return r.json();}).then(function(c){
+    window.CFG=c;
+    if(!localTheme()) applyTheme(c.themeId);
+    if(c.timeLimit) timeLimit=c.timeLimit;
+    document.title=c.title+(document.documentElement.getAttribute('data-title-suffix')||'');
+    document.querySelectorAll('[data-cfg]').forEach(function(el){
+      var v=c[el.getAttribute('data-cfg')];
+      if(v===undefined||v===null||v==='')return;
+      el.textContent=(el.getAttribute('data-cfg-prefix')||'')+v+(el.getAttribute('data-cfg-suffix')||'');
+    });
+    document.querySelectorAll('[data-cfg-mark]').forEach(function(el){ el.textContent=(c.title||'考').charAt(0); });
+  }).catch(function(){ window.CFG={exportPrefix:'考试成绩',passRate:60}; });
+  // 大屏窗口改主题后同源实时跟随
+  window.addEventListener('storage',function(e){ if(e.key===KEY && e.newValue) applyTheme(e.newValue); });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,113 @@
+-- =====================================================================
+-- 培训考试系统 v3.0 · 云端治理【建议稿】—— 请勿直接执行
+-- =====================================================================
+-- 重要前提：
+--   1) v3.0 代码默认 `cloud.partitionBySession = false`，仍然只使用 v2.2 的
+--      exam_results / exam_config 两表和原有字段。升级 v3.0 **不需要执行任何 DDL**。
+--   2) 本文件是"下一步云端治理"的设计稿，用于评估与评审，不是升级步骤。
+--   3) 执行任何 DDL 前必须先导出云端数据备份，且必须避开考试进行中。
+--
+-- ---------------------------------------------------------------------
+-- 一、v2.2 遗留风险的准确描述
+-- ---------------------------------------------------------------------
+-- 现有 schema.sql 为了"服务端无用户会话"，给 anon 授予了两表全部 CRUD，
+-- 并建了 USING(true) WITH CHECK(true) 的全开 RLS 策略。而 publishableKey
+-- 会随 exe / 网页公开分发，因此任何拿到该 key 的人都能读写删全部成绩与开关。
+--
+-- v3.0 已在【代码层】大幅收敛这个风险面：
+--   * 题库答案不再下发客户端，判分只在服务端；
+--   * 所有管理接口要求管理令牌，移除了 /api/reset 的 key= 旁路；
+--   * 学员令牌绑定姓名，跨学员提交被拒绝；
+--   * 逐题判定限流、登录限流、审计 JSONL 留痕。
+-- 但只要 publishableKey 仍是公开凭据，"能绕过服务端直接改库"这一条
+-- 无法仅靠前端代码消除 —— 必须借助平台侧能力。
+--
+-- ---------------------------------------------------------------------
+-- 二、彻底修复的前置条件（需向平台确认，未确认前不要执行）
+-- ---------------------------------------------------------------------
+--   A. 平台是否提供服务端专用凭据（service_role / secret key）？
+--      若有：成绩写入改由服务端凭据完成，anon 只保留 SELECT 或干脆收回。
+--   B. 平台是否支持云函数 / 边缘函数，可代理写库并校验管理令牌？
+--      若有：把 upsert 收敛到函数，anon 不直接写表。
+--   C. 平台是否支持 realtime / 行级触发器？用于替代当前轮询式开关同步。
+--   D. 以上皆无：只能采用下面的"过渡方案"，并接受 anon 仍可写入的风险。
+--
+-- ---------------------------------------------------------------------
+-- 三、过渡方案（不依赖平台新能力，风险只降不全消）
+-- ---------------------------------------------------------------------
+-- 思路：成绩表改为"只追加事件"，anon 仅 INSERT + SELECT；
+--       当前状态由视图按 (session_id, name, seq) 取最后一条派生；
+--       DELETE / UPDATE 全部收回。篡改者仍能"追加"假事件，但无法抹掉真实记录，
+--       审计上可发现异常。
+--
+-- 【以下 DDL 为设计示意，未在平台验证，切勿直接整段运行】
+--
+-- CREATE TABLE IF NOT EXISTS exam_events (
+--   id           BIGSERIAL PRIMARY KEY,
+--   session_id   TEXT NOT NULL,
+--   name         TEXT NOT NULL,
+--   seq          BIGINT NOT NULL,
+--   kind         TEXT NOT NULL,           -- start / reveal / progress / submit
+--   payload      JSONB NOT NULL DEFAULT '{}',
+--   client_event TEXT,                   -- 幂等键
+--   created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+--   UNIQUE (session_id, name, client_event)
+-- );
+-- ALTER TABLE exam_events ENABLE ROW LEVEL SECURITY;
+-- REVOKE ALL ON TABLE public.exam_events FROM anon, authenticated;
+-- GRANT SELECT, INSERT ON TABLE public.exam_events TO anon;
+-- DROP POLICY IF EXISTS exam_events_read ON exam_events;
+-- CREATE POLICY exam_events_read ON exam_events FOR SELECT TO anon USING (true);
+-- DROP POLICY IF EXISTS exam_events_append ON exam_events;
+-- CREATE POLICY exam_events_append ON exam_events FOR INSERT TO anon WITH CHECK (true);
+--
+-- CREATE OR REPLACE VIEW exam_results_current AS
+--   SELECT DISTINCT ON (session_id, name) session_id, name, payload
+--   FROM exam_events ORDER BY session_id, name, seq DESC;
+--
+-- ---------------------------------------------------------------------
+-- 四、多场次分区（可选，需代码侧同时开启）
+-- ---------------------------------------------------------------------
+-- 现在 exam_results 以 name 为主键，换场次时同名学员会串数据，只能靠"先清空云端"
+-- 规避。目标结构应把主键改为 (session_id, name)，并让 exam_config 也带 session_id。
+-- 开启步骤（顺序不可颠倒）：
+--   1. 导出并备份现有 exam_results / exam_config；
+--   2. 建新表 exam_results_v3 / exam_config_v3（带 session_id）；
+--   3. 把旧数据按当前 session_id 迁入；
+--   4. 修改 src/store/cloud.js 的读写目标表与字段；
+--   5. 把 session.json 的 cloud.partitionBySession 置 true；
+--   6. 双跑验证后再下线旧表。
+--
+-- CREATE TABLE IF NOT EXISTS exam_results_v3 (
+--   session_id   TEXT NOT NULL,
+--   name         TEXT NOT NULL,
+--   status       TEXT NOT NULL DEFAULT 'idle',
+--   progress     INTEGER DEFAULT 0,
+--   total        INTEGER DEFAULT 0,
+--   current      INTEGER DEFAULT 0,
+--   score        INTEGER,
+--   correct      INTEGER,
+--   duration_sec INTEGER,
+--   attempts     INTEGER DEFAULT 0,
+--   answers      JSONB DEFAULT '[]',
+--   picks        JSONB DEFAULT '[]',
+--   q_times      JSONB DEFAULT '[]',
+--   started_at   BIGINT,
+--   finished_at  BIGINT,
+--   updated_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+--   PRIMARY KEY (session_id, name)
+-- );
+-- CREATE TABLE IF NOT EXISTS exam_config_v3 (
+--   session_id  TEXT NOT NULL,
+--   key         TEXT NOT NULL,
+--   value_json  JSONB NOT NULL,
+--   updated_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+--   PRIMARY KEY (session_id, key)
+-- );
+--
+-- ---------------------------------------------------------------------
+-- 五、结论
+-- ---------------------------------------------------------------------
+-- 本轮 v3.0 升级：代码层安全闭环已完成并经 38 项自检验证；
+-- 云端 RLS 收紧与多场次分区属于"需要停机窗口 + 平台能力确认"的独立变更，
+-- 单独立项，不在本次升级内执行。

@@ -1,0 +1,18 @@
+# 运行时数据（含考试结果与名单，切勿提交）
+data.json
+data.clean.json
+students.json
+questions.json
+session.json
+.cloud.json
+*.local.json
+# 依赖与构建产物
+node_modules/
+*.exe
+_internal/
+dist/
+# 日志与缓存
+*.log
+__pycache__/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,43 @@
+{
+  "title": "职业技能考试系统",
+  "unit": "【单位】",
+  "school": "【培训学校】",
+  "major": "【工种/专业】",
+  "batch": "【场次编号】",
+  "subtitle": "职业技能理论考核",
+  "examDate": "",
+  "startTime": "",
+  "endTime": "",
+  "themeId": "T2",
+  "studentPassword": "CHANGE_ME",
+  "adminPassword": "CHANGE_ME",
+  "timeLimitSec": 2700,
+  "passRate": 60,
+  "maxAttempts": 2,
+  "requireStudentPw": true,
+  "exportPrefix": "【场次】",
+  "schemaVersion": 3,
+  "sessionId": "EXAMPLE-SESSION-01",
+  "questionPolicy": {
+    "mode": "all",
+    "sampleSize": null,
+    "shuffle": false,
+    "seed": ""
+  },
+  "security": {
+    "revealMode": "server",
+    "proctorEnabled": true,
+    "blurThresholdSec": 3,
+    "blurFlagCount": 3,
+    "maxLoginPerMinute": 5,
+    "maxRevealPerSecond": 6
+  },
+  "offline": {
+    "serviceWorker": true,
+    "outbox": true,
+    "replayBatchSize": 20
+  },
+  "cloud": {
+    "partitionBySession": false
+  }
+}

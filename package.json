@@ -1,0 +1,21 @@
+{
+  "name": "training-exam-system",
+  "version": "3.1.0",
+  "description": "培训考试系统 v3.1：分层内核 + 服务端权威判分 + 计时监考闭环 + 主题成绩产物 + 离线韧性 + 云同步",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "selftest": "node tools/selftest_v3.mjs",
+    "doctor": "node tools/doctor.mjs",
+    "build:exe": "node build/build-exe.mjs",
+    "health": "node -e \"fetch('http://localhost:3000/api/health').then(r=>r.json()).then(d=>console.log(JSON.stringify(d,null,2)))\""
+  },
+  "bin": "server.js",
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@tencent-ai/workbuddy-cloud-sdk": "0.1.4"
+  },
+  "private": true
+}

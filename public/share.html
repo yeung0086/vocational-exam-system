@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-title-suffix=" · 参加考试">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#079e61" />
+<title>职业技能考试系统</title>
+<!-- 微信分享卡片：OG 静态标签，抓取器不执行 JS；图片内嵌 sharecode 过门禁 -->
+<meta property="og:type" content="website" />
+<meta property="og:title" content="职业技能考试系统 · 点击进入" />
+<meta property="og:description" content="职业技能考试系统，限时45分钟，点击进入答题。" />
+<meta property="og:image" content="https://your-domain.example.com/share-card.png" />
+<meta property="og:image:secure_url" content="https://your-domain.example.com/share-card.png" />
+<meta property="og:image:type" content="image/png" />
+<meta property="og:image:width" content="478" />
+<meta property="og:image:height" content="478" />
+<meta property="og:url" content="https://your-domain.example.com/share.html" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="职业技能考试系统 · 点击进入" />
+<meta name="twitter:description" content="职业技能考试系统，限时45分钟，点击进入答题。" />
+<meta name="twitter:image" content="https://your-domain.example.com/share-card.png" />
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;background:linear-gradient(160deg,#0a7d4a,#07a554);color:#1f2329;line-height:1.6;min-height:100vh;}
+  .app{max-width:480px;margin:0 auto;min-height:100vh;padding:0 0 34px;}
+  .hero{padding:30px 24px 22px;color:#fff;text-align:center;}
+  .hero .cls{font-size:13px;opacity:.9;letter-spacing:1px;}
+  .hero h1{margin:8px 0 4px;font-size:24px;font-weight:800;line-height:1.3;}
+  .hero .tip{font-size:13px;opacity:.9;}
+  .stage{padding:0 16px;}
+  .card{background:#fff;border-radius:18px;padding:22px 18px;box-shadow:0 10px 30px rgba(0,40,20,.18);margin-bottom:16px;text-align:center;}
+  .card.enter{border:2px solid rgba(255,255,255,.5);}
+  .card h2{font-size:18px;margin:0 0 4px;color:#0a7d4a;}
+  .card .desc{font-size:13px;color:#6b7580;margin-bottom:14px;}
+  .badge{display:inline-block;background:#eafaf1;color:#0a7d4a;border-radius:20px;padding:3px 12px;font-size:12px;font-weight:600;margin-bottom:10px;}
+  .qr{width:210px;height:210px;margin:6px auto 12px;border:1px solid #eee;border-radius:12px;display:block;}
+  .bigbtn{display:block;width:100%;padding:15px;border:none;border-radius:14px;background:linear-gradient(135deg,#0bbf63,#07a554);color:#fff;font-size:17px;font-weight:700;cursor:pointer;text-decoration:none;box-shadow:0 8px 18px -8px #07a554;margin-top:4px;}
+  .bigbtn:active{transform:scale(.985);}
+  .link{font-size:12px;color:#8a9099;word-break:break-all;margin:12px 0 6px;}
+  .btn{display:inline-block;padding:9px 16px;border:none;border-radius:10px;background:#f2f5f7;color:#0a7d4a;font-size:14px;font-weight:600;cursor:pointer;margin:4px 3px 0;}
+  .steps{background:rgba(255,255,255,.95);border-radius:16px;padding:18px 20px;box-shadow:0 8px 24px rgba(0,40,20,.12);}
+  .steps h2{font-size:15px;margin:0 0 10px;color:#0a7d4a;}
+  .steps ol{margin:0;padding-left:20px;font-size:13.5px;color:#46505a;}
+  .steps li{margin-bottom:8px;}
+  .share-tip{background:#fff8e6;border:1px solid #ffe4a3;color:#8a6a12;border-radius:12px;padding:12px 14px;font-size:12.5px;margin-bottom:16px;text-align:left;}
+  .share-tip b{color:#6b4f05;}
+  .foot{text-align:center;font-size:12px;color:rgba(255,255,255,.85);margin-top:14px;line-height:1.7;}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="hero">
+    <div class="cls" data-cfg="subtitle">职业技能培训</div>
+    <h1 data-cfg="title">职业技能考试系统</h1>
+    <div class="tip">限时 45 分钟 · 点击进入答题</div>
+  </div>
+
+  <div class="stage">
+    <div class="share-tip">
+      <b>发到微信群的方法：</b>先点下方「进入考试」打开本页 → 点右上角 <b>···</b> → <b>分享给朋友</b>，群友看到的就是带图卡片；或直接把本页二维码图片发群，长按识别即可进入。
+    </div>
+
+    <div class="card enter">
+      <span class="badge">✅ 学员入口 · 推荐</span>
+      <h2>进入考试</h2>
+      <div class="desc">点击下方按钮，输入进入密码后选择姓名开始答题</div>
+      <a class="bigbtn" id="enterBtn" href="/">▶ 点击进入考试</a>
+      <div class="link" id="lk1">https://your-domain.example.com/</div>
+      <button class="btn" onclick="copy('https://your-domain.example.com/')">复制学员链接</button>
+    </div>
+
+    <div class="card">
+      <h2>② 扫码进入（发图最稳）</h2>
+      <div class="desc">把这二维码图片发到微信群，学员长按识别直接进</div>
+      <img class="qr" src="/share-card.png" alt="学员答题二维码" />
+      <a class="btn" href="/share-card.png" download>保存卡片图</a>
+    </div>
+
+    <div class="steps">
+      <h2>使用步骤</h2>
+      <ol>
+        <li>老师先把本页发到微信群（按上方方法发成卡片）。</li>
+        <li>学员点卡片 → 进入，输入<strong>进入密码</strong>（老师统一发放）。</li>
+        <li>选自己姓名 → 开始考试，限时 45 分钟，到时自动交卷。</li>
+        <li>最后 10 分钟倒计时变红，最后 5/3/2/1 分钟语音提醒。</li>
+        <li>管理员在桌面大屏实时看谁在答、谁完成、得分多少。</li>
+      </ol>
+    </div>
+    <div class="foot">职业技能考试系统 · v3.1.1<br/>卡片若在群里显示为纯链接，按上方「先打开再分享」方法即可变卡片。</div>
+  </div>
+</div>
+<script>
+  function copy(t){
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(t).then(()=>alert('已复制学员链接')).catch(()=>prompt('请手动复制：',t));
+    } else { prompt('请手动复制：',t); }
+  }
+</script>
+<script>
+/* 场次主题注入：所有可变文字来自 /api/config */
+(function(){
+  fetch('/api/config').then(function(r){return r.json();}).then(function(c){
+    window.CFG=c;
+    document.title=c.title+(document.documentElement.getAttribute('data-title-suffix')||'');
+    document.querySelectorAll('[data-cfg]').forEach(function(el){
+      var v=c[el.getAttribute('data-cfg')];
+      if(v===undefined||v===null||v==='')return;
+      el.textContent=(el.getAttribute('data-cfg-prefix')||'')+v+(el.getAttribute('data-cfg-suffix')||'');
+    });
+  }).catch(function(){ window.CFG={exportPrefix:'考试成绩',passRate:60}; });
+})();
+</script>
+</body>
+</html>
